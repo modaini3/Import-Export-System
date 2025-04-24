@@ -1,13 +1,4 @@
 === MANAGERS ===
 === CASES ===
-Case ID: 1000
-  Title: Y
-  Description: C
-  Created: 2025-04-24 at 22:27:58
-  Source: F
-  Status: Open
-  Assigned Managers (0):
-  Actions (0):
-
 === SYSTEM ===
-Next Case ID: 1001
+Next Case ID: 1000
