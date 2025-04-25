@@ -65,3 +65,13 @@ This project uses structured programming techniques and static arrays, making it
 ### 📦 Compile
 ```bash
 g++ -o IE_System P.cpp
+
+📌 Notes
+- Maximum limits:
+      100 Cases
+      20 Managers
+      50 Actions per case
+      5 Assigned Managers per case
+- The system uses static arrays (no STL vectors) for compatibility and simplicity.
+
+- The app auto-generates timestamps for actions and case creation.
