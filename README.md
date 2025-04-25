@@ -65,8 +65,9 @@ This project uses structured programming techniques and static arrays, making it
 ### 📦 Compile
 ```bash
 g++ -o IE_System P.cpp
+``` 
 
-📌 Notes
+### 📌 Notes
 - Maximum limits:
       100 Cases
       20 Managers
