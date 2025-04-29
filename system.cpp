@@ -51,12 +51,18 @@ string currentUser;
 bool currentUserIsManager = false;
 int nextCaseId = 1000;
 
-// Function Prototypes
+// Functions
+// User flow
 void login();
 void mainMenu();
+void adminMainMenu();
+
+// Menu navigation
 void caseManagementMenu();
 void managerManagementMenu();
 void reportMenu();
+
+// Case operations
 void addCase();
 void viewCases(bool brief = false);
 bool viewCaseDetails(int caseId);
@@ -66,14 +72,22 @@ void exportCase();
 void closeCase();
 void editCase();
 void deleteCase();
+
+// Manager operations
 void addManager();
 void viewManagers();
 void editManager();
 void toggleManagerStatus();
 void deleteManager();
+
+// Reporting
 void generateReport();
+
+// File I/O
 void saveData();
 void loadData();
+
+// Utilities
 void clearInputBuffer();
 string getCurrentDate();
 string getCurrentTime();
@@ -82,9 +96,10 @@ int findManagerIndex(const string& managerName);
 bool isManagerAssignedToCase(const Case& c, const string& managerName);
 void printCaseHeader();
 void printCaseSummary(const Case& c);
+
+// Admin credential verification
 bool validateAdminLogin(const string& username, const string& password);
 void addNewAdmin();
-void adminMainMenu();
 
 int main() {
     loadData();
@@ -162,7 +177,7 @@ void addNewAdmin() {
     cout << "Enter new admin password: ";
     getline(cin, password);
 
-    if (validateAdminLogin(username, password)) {
+    if (validateAdminLogin(username, password)) { // Prevent duplicate admin entries
         cout << "Admin already exists!" << endl;
         return;
     }
@@ -558,6 +573,7 @@ void assignManagerToCase() {
     cout << "Manager assigned successfully." << endl;
 }
 
+// Adds a new action log entry to a specified case, only if manager is assigned
 void addActionToCase() {
     cout << "Enter Case ID: ";
     int caseId;
@@ -576,6 +592,7 @@ void addActionToCase() {
         return;
     }
 
+    // Ensure manager is assigned before adding action
     if (currentUserIsManager) {
         bool isAssigned = false;
         for (int i = 0; i < c.assignedManagerCount; i++) {
@@ -590,6 +607,7 @@ void addActionToCase() {
         }
     }
 
+    // Prompt for action description
     Action& action = c.actions[c.actionCount++];
     cout << "Enter action description: ";
     getline(cin, action.description);
@@ -597,6 +615,7 @@ void addActionToCase() {
     action.time = getCurrentTime();
     action.manager = currentUser;
 
+    // Update status from Assigned -> In Progress if needed
     if (c.status == "Assigned") {
         c.status = "In Progress";
     }
@@ -604,6 +623,7 @@ void addActionToCase() {
     cout << "Action added successfully." << endl;
 }
 
+// Exports a case to another manager by assigning them and logging the reason as an action
 void exportCase() {
     cout << "Enter Case ID: ";
     int caseId;
@@ -617,12 +637,15 @@ void exportCase() {
     }
 
     Case& c = cases[caseIndex];
+
     if (c.status == "Closed") {
         cout << "Case is already closed and cannot be exported." << endl;
         return;
     }
 
-    cout << "\nAvailable Managers:" << endl;
+    // Display active managers not already assigned to the case
+    cout << "
+Available Managers:" << endl;
     int availableCount = 0;
     for (int i = 0; i < managerCount; i++) {
         if (managers[i].active) {
@@ -674,7 +697,8 @@ void exportCase() {
         reason = "No reason provided";
     }
 
-    cout << "\nYou are about to export this case to " << managerName << endl;
+    cout << "
+You are about to export this case to " << managerName << endl;
     cout << "Reason: " << reason << endl;
     cout << "Are you sure you want to proceed? (y/n): ";
     char confirm;
@@ -687,8 +711,10 @@ void exportCase() {
     }
 
     if (c.assignedManagerCount < MAX_ASSIGNED_MANAGERS) {
+        // Add manager to case
         c.assignedManagers[c.assignedManagerCount++] = managerName;
-        
+
+        // Log the export as an action
         if (c.actionCount < MAX_ACTIONS) {
             Action& action = c.actions[c.actionCount++];
             action.description = "Case exported to " + managerName + ". Reason: " + reason;
@@ -696,15 +722,18 @@ void exportCase() {
             action.time = getCurrentTime();
             action.manager = currentUser;
         }
-        
+
+        // Update status if needed
         c.status = "Exported";
-        
-        cout << "\nCase successfully exported to " << managerName << endl;
+
+        cout << "
+Case successfully exported to " << managerName << endl;
         cout << "Export details have been recorded." << endl;
     } else {
         cout << "Cannot export: Maximum managers already assigned to this case." << endl;
     }
 }
+
 
 void closeCase() {
     cout << "Enter Case ID: ";
@@ -1018,10 +1047,9 @@ void loadData() {
     nextCaseId = 1000;
 
     while (getline(inFile, line)) {
-        // Skip empty lines and comments
-        if (line.empty() || line[0] == '#') continue;
+        if (line.empty() || line[0] == '#') continue; // Skip blank lines or comments
 
-        // Check for section headers
+        // Detect section headers in the data file
         if (line.find("=== MANAGERS ===") != string::npos) {
             currentSection = "managers";
             continue;
@@ -1033,10 +1061,10 @@ void loadData() {
             continue;
         }
 
+        // Parse data based on current section
         if (currentSection == "managers" && managerCount < MAX_MANAGERS) {
             if (line.find("Manager ") == 0) {
-                // New manager - the details will follow in subsequent lines
-                continue;
+                continue; // Marker line; actual data comes in next few lines
             } else if (line.find("  Name: ") == 0) {
                 managers[managerCount].name = line.substr(8);
             } else if (line.find("  Department: ") == 0) {
@@ -1045,14 +1073,14 @@ void loadData() {
                 managers[managerCount].password = line.substr(12);
             } else if (line.find("  Status: ") == 0) {
                 managers[managerCount].active = (line.substr(10) == "Active");
-                managerCount++;
+                managerCount++; // Manager complete once status is read
             }
         }
         else if (currentSection == "cases" && caseCount < MAX_CASES) {
             if (line.find("Case ID: ") == 0) {
-                // New case
                 try {
                     cases[caseCount].id = stoi(line.substr(9));
+                    // Ensure nextCaseId stays ahead of highest ID found
                     if (cases[caseCount].id >= nextCaseId) {
                         nextCaseId = cases[caseCount].id + 1;
                     }
@@ -1060,46 +1088,33 @@ void loadData() {
                     cerr << "Error parsing case ID" << endl;
                     continue;
                 }
-            } 
-            else if (line.find("  Title: ") == 0) {
+            } else if (line.find("  Title: ") == 0) {
                 cases[caseCount].title = line.substr(9);
-            }
-            else if (line.find("  Description: ") == 0) {
+            } else if (line.find("  Description: ") == 0) {
                 cases[caseCount].description = line.substr(15);
-            }
-            else if (line.find("  Created: ") == 0) {
+            } else if (line.find("  Created: ") == 0) {
                 size_t atPos = line.find(" at ");
                 if (atPos != string::npos) {
                     cases[caseCount].creationDate = line.substr(11, atPos - 11);
                     cases[caseCount].creationTime = line.substr(atPos + 4);
                 }
-            }
-            else if (line.find("  Source: ") == 0) {
+            } else if (line.find("  Source: ") == 0) {
                 cases[caseCount].source = line.substr(10);
-            }
-            else if (line.find("  Status: ") == 0) {
+            } else if (line.find("  Status: ") == 0) {
                 cases[caseCount].status = line.substr(10);
-            }
-            else if (line.find("  Assigned Managers (") == 0) {
-                // Managers will follow in subsequent lines
-                cases[caseCount].assignedManagerCount = 0;
-            }
-            else if (line.find("    - ") == 0 && cases[caseCount].assignedManagerCount < MAX_ASSIGNED_MANAGERS) {
+            } else if (line.find("  Assigned Managers (") == 0) {
+                cases[caseCount].assignedManagerCount = 0; // Reset count before reading managers
+            } else if (line.find("    - ") == 0 && cases[caseCount].assignedManagerCount < MAX_ASSIGNED_MANAGERS) {
                 cases[caseCount].assignedManagers[cases[caseCount].assignedManagerCount++] = line.substr(6);
-            }
-            else if (line.find("  Actions (") == 0) {
-                // Actions will follow in subsequent lines
-                cases[caseCount].actionCount = 0;
-            }
-            else if (line.find("    - ") == 0 && cases[caseCount].actionCount < MAX_ACTIONS) {
+            } else if (line.find("  Actions (") == 0) {
+                cases[caseCount].actionCount = 0; // Reset count before reading actions
+            } else if (line.find("    - ") == 0 && cases[caseCount].actionCount < MAX_ACTIONS) {
                 Action& a = cases[caseCount].actions[cases[caseCount].actionCount];
                 size_t byPos = line.find(" by ");
                 size_t colonPos = line.find(": ", byPos);
-                
                 if (byPos != string::npos && colonPos != string::npos) {
                     string dateTime = line.substr(6, byPos - 6);
                     size_t spacePos = dateTime.find(' ');
-                    
                     if (spacePos != string::npos) {
                         a.date = dateTime.substr(0, spacePos);
                         a.time = dateTime.substr(spacePos + 1);
@@ -1108,10 +1123,8 @@ void loadData() {
                         cases[caseCount].actionCount++;
                     }
                 }
-            }
-            else if (line.empty()) {
-                // Blank line indicates end of case
-                caseCount++;
+            } else if (line.empty()) {
+                caseCount++; // Move to next case when a blank line is found
             }
         }
         else if (currentSection == "system") {
