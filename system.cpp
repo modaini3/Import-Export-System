@@ -644,8 +644,7 @@ void exportCase() {
     }
 
     // Display active managers not already assigned to the case
-    cout << "
-Available Managers:" << endl;
+    cout << "Available Managers:" << endl;
     int availableCount = 0;
     for (int i = 0; i < managerCount; i++) {
         if (managers[i].active) {
@@ -697,8 +696,7 @@ Available Managers:" << endl;
         reason = "No reason provided";
     }
 
-    cout << "
-You are about to export this case to " << managerName << endl;
+    cout << "You are about to export this case to " << managerName << endl;
     cout << "Reason: " << reason << endl;
     cout << "Are you sure you want to proceed? (y/n): ";
     char confirm;
@@ -726,8 +724,7 @@ You are about to export this case to " << managerName << endl;
         // Update status if needed
         c.status = "Exported";
 
-        cout << "
-Case successfully exported to " << managerName << endl;
+        cout << "Case successfully exported to " << managerName << endl;
         cout << "Export details have been recorded." << endl;
     } else {
         cout << "Cannot export: Maximum managers already assigned to this case." << endl;
